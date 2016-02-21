@@ -101,7 +101,7 @@ struct TempFile* make_temp_file(const char* format) {
         return NULL;
     }
 
-    int fd = _open_osfhandle((intptr_t )fh, _O_BINARY | _O_RDWR);
+    int fd = _open_osfhandle((intptr_t)fh, _O_BINARY | _O_RDWR);
     if(fd == -1) {
         free(temp_file);
         CloseHandle(fh);

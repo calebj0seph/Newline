@@ -1,5 +1,5 @@
 prefix := /usr/local
-CPPFLAGS += --std=gnu99 -Wall -Wextra
+CPPFLAGS += --std=gnu99 -Wall -Wextra -D_FILE_OFFSET_BITS=64
 REL_CPPFLAGS += -Os
 DEBUG_CPPFLAGS += -DDEBUG -g
 EXECUTABLE := newline
@@ -32,7 +32,6 @@ else
     LDFLAGS += -framework Foundation
   else
     SRCS += tempfile-linux.c
-    CPPFLAGS += -D_FILE_OFFSET_BITS=64
     REL_LDFLAGS += -flto
     REL_CPPFLAGS += -flto
   endif
