@@ -15,7 +15,7 @@ Using Newline, you can make all of your source code neat and consistent before c
 * Can add a trailing newline to the end of files if one doesn't already exist, and remove excess trailing newlines from the end of files.
 * Supports any ASCII-like encoding of files such as UTF-8, UTF-8 without BOM or ISO-8859-1.
 * Supports Linux, OS X and Windows (with proper Unicode filename support).
-* Fast. Newline is written in C, and can process a 1GiB text file with 21 million lines in XXX on a regular HDD.
+* Fast. Newline is written in C, and can process a 1GiB text file with 21 million lines at a rate of 9.4 MiB/s on a regular HDD.
 
 Newline doesn't perform any conversion of tab characters. If you want to convert tabs to spaces or vice-versa, please refer to the `expand` and `unexpand` programs respectively from the GNU Core Utilities.
 
@@ -36,9 +36,11 @@ Each `FILE` argument specifies a text file to process. Options are applied to al
 Standard POSIX command line argument conventions apply, i.e. `newline -- --verbose -N` would process a file named `--verbose` and `-N`, `newline -NSv` is the same as `newline -N -S -v`, and `newline -tCRLF` is the same as `newline -t CRLF`.
 
 ### Recursively processing directory
-You can make use of a Bash or Batch script to run Newline on an entire directory. The following examples run Newline, and then convert tabs to spaces using `expand`.
+You can make use of a Bash or Batch script to run Newline on an entire directory.
 
 #### Bash script
+This example also converts tabs to spaces using `expand`.
+
 ```bash
 #!/usr/bin/env bash
 
@@ -48,13 +50,21 @@ directory="./My Project/src"
 # Specify the types of files to process
 files="*.py;*.md"
 
-# Specify the command line for Newline
-newline="newline -vt LF"
+# Specify what to do with each file
+process_file() {
+    temp_file="$(mktemp expand_XXXXXX.tmp)"
+    expand --tabs=4 "$1" > "$temp_file"
+    mv "$temp_file" "$1"
+    newline -vt LF "$1"
+}
+
+export -f process_file
 
 echo $files | {
     IFS=";" read -r -a file_types
     for file_type in "${file_types[@]}"; do
-        find "$directory" -iname "$file_type" -exec $newline {} \;
+        find "$directory" -iname "$file_type" \
+            -exec bash -c 'process_file "$0"' {} \;
     done
 }
 ```
@@ -73,7 +83,7 @@ set newline=.\newline.exe -vt CRLF
 
 for /r "%directory%" %%f in (%files%) do (
     %newline% "%%f"
-    
+
 )
 ```
 ## Installation
