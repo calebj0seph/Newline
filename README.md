@@ -97,7 +97,7 @@ You can configure things like where Newline is installed or the compiler to use 
 `make install prefix=/usr/local CC=clang`
 
 ### Windows
-For Windows, prebuilt binaries are available [here](./releases/latest).
+For Windows, prebuilt binaries are available [here](../../releases/latest).
 
 Currently compiling Newline with Visual Studio isn't supported, however you can compile Newline natively for Windows using any C99 compliant compiler such as Mingw-w64.
 
