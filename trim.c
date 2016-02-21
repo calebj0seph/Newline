@@ -145,6 +145,7 @@ bool trim_file(FILE* in_file, FILE* out_file, enum NewlineType newline_type,
         }
     }
 
+    fflush(out_file);
     if(changes_made) {
         truncate(out_file);
     }

@@ -101,6 +101,7 @@ int main(int argc, char** argv) {
                     );
                 }
                 free(buffer);
+                fflush(file);
                 truncate(file);
             }
             if(args.verbose) {
