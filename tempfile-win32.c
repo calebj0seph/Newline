@@ -9,7 +9,6 @@
 #include <fcntl.h>
 #include <share.h>
 #include <sys/stat.h>
-#include "trim.h"
 #include "tempfile.h"
 
 static wchar_t alpha_num[] = {

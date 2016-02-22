@@ -15,6 +15,9 @@ struct TempFile {
 #endif // _WIN32
 };
 
+/* Buffer length for file IO operations (64 KiB) */
+static const size_t FileBufferLen = 64*1024;
+
 /* Returns a file handle to a temporary file with read and write access. The
 'format' parameter defines the filename of the temporary file. It must contain
 a single '%' character which will be replaced with random letters and digits to

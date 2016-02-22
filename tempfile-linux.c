@@ -3,7 +3,6 @@
 #include <string.h>
 #include <paths.h>
 #include <unistd.h>
-#include "trim.h"
 #include "tempfile.h"
 
 struct TempFile* make_temp_file(const char* format) {

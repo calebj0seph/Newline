@@ -3,12 +3,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <unistd.h>
 
 #ifdef _WIN32
     #include <io.h>
     #include <fcntl.h>
     #include <share.h>
     #include <sys/stat.h>
+    #define delete(file) _wunlink(file)
+#else
+    #define delete(file) unlink(file)
 #endif // _WIN32
 
 #include "args.h"
@@ -88,21 +92,23 @@ int main(int argc, char** argv) {
                 // permission bits or owners. ReplaceFile() does this on
                 // Windows, but an easy solution for Unix systems doesn't seem
                 // to exist.
-                seek(file, 0, SEEK_SET);
-                seek(temp_file->file, 0, SEEK_SET);
+                fseeko(file, 0, SEEK_SET);
+                fseeko(temp_file->file, 0, SEEK_SET);
                 uint8_t* buffer = malloc(FileBufferLen);
-                size_t read_bytes = read(
-                    temp_file->file, buffer, FileBufferLen
+                size_t read_bytes = fread(
+                    buffer, 1, FileBufferLen, temp_file->file
                 );
                 while(read_bytes) {
-                    write(file, buffer, read_bytes);
-                    read_bytes = read(
-                        temp_file->file, buffer, FileBufferLen
+                    fwrite(buffer, 1, read_bytes, file);
+                    read_bytes = fread(
+                        buffer, 1, FileBufferLen, temp_file->file
                     );
                 }
                 free(buffer);
+
+                off_t file_len = ftello(file);
                 fflush(file);
-                truncate(file);
+                ftruncate(fileno(file), file_len);
             }
             if(args.verbose) {
                 if(result) {

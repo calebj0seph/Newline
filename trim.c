@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "args.h"
 #include "trim.h"
 
@@ -15,12 +16,12 @@ bool trim_file(FILE* in_file, FILE* out_file, enum NewlineType newline_type,
     size_t num_cr = 0;
 
     uint8_t cur_byte;
-    size_t cur_bytes_len = read(in_file, &cur_byte, 1);
+    size_t cur_bytes_len = fread(&cur_byte, 1, 1, in_file);
     while(cur_bytes_len) {
         if((char)cur_byte == '\r' || (char)cur_byte == '\n') {
             // Determine current newline type
             uint8_t next_byte;
-            size_t next_bytes_len = read(in_file, &next_byte, 1);
+            size_t next_bytes_len = fread(&next_byte, 1, 1, in_file);
             enum NewlineType cur_newline;
             if(next_bytes_len && (char)cur_byte == '\r' &&
                     (char)next_byte == '\n') {
@@ -36,13 +37,13 @@ bool trim_file(FILE* in_file, FILE* out_file, enum NewlineType newline_type,
 
             // Go back one character if we didn't read a CRLF
             if(next_bytes_len && cur_newline != CRLF) {
-                seek(in_file, -1, SEEK_CUR);
+                fseeko(in_file, -1, SEEK_CUR);
             }
 
             // Handle trailing whitespace
             if(strip && consecutive_whitespace > 0) {
                 changes_made = true;
-                seek(out_file, -consecutive_whitespace, SEEK_CUR);
+                fseeko(out_file, -consecutive_whitespace, SEEK_CUR);
                 consecutive_whitespace = 0;
             }
 
@@ -53,17 +54,17 @@ bool trim_file(FILE* in_file, FILE* out_file, enum NewlineType newline_type,
                 newline_to_write = newline_type;
             }
             if(newline_to_write == LF) {
-                write(out_file, ((uint8_t[]){10}), 1);
+                fwrite((uint8_t[]){10}, 1, 1, out_file);
                 if(trailing_newline) {
                     consecutive_newline += 1;
                 }
             } else if(newline_to_write == CRLF) {
-                write(out_file, ((uint8_t[]){13, 10}), 2);
+                fwrite((uint8_t[]){13, 10}, 1, 2, out_file);
                 if(trailing_newline) {
                     consecutive_newline += 2;
                 }
             } else {
-                write(out_file, ((uint8_t[]){13}), 1);
+                fwrite((uint8_t[]){13}, 1, 1, out_file);
                 if(trailing_newline) {
                     consecutive_newline += 1;
                 }
@@ -75,20 +76,20 @@ bool trim_file(FILE* in_file, FILE* out_file, enum NewlineType newline_type,
             } else {
                 consecutive_whitespace += 1;
             }
-            write(out_file, &cur_byte, 1);
+            fwrite(&cur_byte, 1, 1, out_file);
         } else {
             // Write normal character
             consecutive_whitespace = 0;
             consecutive_newline = 0;
-            write(out_file, &cur_byte, 1);
+            fwrite(&cur_byte, 1, 1, out_file);
         }
-        cur_bytes_len = read(in_file, &cur_byte, 1);
+        cur_bytes_len = fread(&cur_byte, 1, 1, in_file);
     }
 
     // Handle trailing whitespace at end of file
     if(strip && consecutive_whitespace > 0) {
         changes_made = true;
-        seek(out_file, -consecutive_whitespace, SEEK_CUR);
+        fseeko(out_file, -consecutive_whitespace, SEEK_CUR);
         consecutive_whitespace = 0;
     }
 
@@ -96,15 +97,15 @@ bool trim_file(FILE* in_file, FILE* out_file, enum NewlineType newline_type,
     if(trailing_newline) {
         if(consecutive_newline > 0) {
             // Trim excess trailing newlines
-            seek(out_file, -consecutive_newline, SEEK_CUR);
-            cur_bytes_len = read(out_file, &cur_byte, 1);
+            fseeko(out_file, -consecutive_newline, SEEK_CUR);
+            cur_bytes_len = fread(&cur_byte, 1, 1, out_file);
             if(cur_bytes_len && (char)cur_byte == '\n' &&
                     consecutive_newline > 1) {
                 // Need to truncate the file after the first LF
                 changes_made = true;
             } else if(cur_bytes_len && (char)cur_byte == '\r') {
                 // Consume the LF followed by CR if it exists
-                cur_bytes_len = read(out_file, &cur_byte, 1);
+                cur_bytes_len = fread(&cur_byte, 1, 1, out_file);
                 if(cur_bytes_len && (char)cur_byte == '\n') {
                     if(consecutive_newline > 2) {
                         // Need to truncate the file after the first CRLF
@@ -117,7 +118,7 @@ bool trim_file(FILE* in_file, FILE* out_file, enum NewlineType newline_type,
                     }
                     if(cur_bytes_len) {
                         // Seek back if we didn't read a CRLF
-                        seek(out_file, -1, SEEK_CUR);
+                        fseeko(out_file, -1, SEEK_CUR);
                     }
                 }
             }
@@ -135,19 +136,20 @@ bool trim_file(FILE* in_file, FILE* out_file, enum NewlineType newline_type,
                 }
             }
             if(trailing_newline_type == LF) {
-                write(out_file, ((uint8_t[]){10}), 1);
+                fwrite(((uint8_t[]){10}), 1, 1, out_file);
             } else if(trailing_newline_type == CRLF) {
-                write(out_file, ((uint8_t[]){13, 10}), 2);
+                fwrite((uint8_t[]){13, 10}, 1, 2, out_file);
             } else {
-                write(out_file, ((uint8_t[]){13}), 1);
+                fwrite(((uint8_t[]){13}), 1, 1, out_file);
             }
             changes_made = true;
         }
     }
 
+    off_t out_file_len = ftello(out_file);
     fflush(out_file);
     if(changes_made) {
-        truncate(out_file);
+        ftruncate(fileno(out_file), out_file_len);
     }
     return changes_made;
 }

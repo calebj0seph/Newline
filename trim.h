@@ -5,28 +5,6 @@
 #include <stdio.h>
 #include "args.h"
 
-// Rely on _FILE_OFFSET_BITS=64 for LFS on both Windows and POSIX.
-#ifdef _WIN32
-    #include <io.h>
-    #define seek(file, offset, whence) fseeko(file, offset, whence)
-    #define truncate(file) _chsize_s(_fileno(file), ftello(file))
-    #define tell(file) ftello(file)
-    #define read(file, ptr, size) fread(ptr, 1, size, file)
-    #define write(file, ptr, size) fwrite(ptr, 1, size, file)
-    #define delete(file) _wunlink(file)
-#else
-    #include <unistd.h>
-    #define seek(file, offset, whence) fseeko(file, offset, whence)
-    #define truncate(file) ftruncate(fileno(file), ftello(file))
-    #define tell(file) ftello(file)
-    #define read(file, ptr, size) fread(ptr, 1, size, file)
-    #define write(file, ptr, size) fwrite(ptr, 1, size, file)
-    #define delete(file) unlink(file)
-#endif
-
-// Buffer length for file IO operations (64 KiB)
-static const size_t FileBufferLen = 64*1024;
-
 /* Processes 'in_file', writing the result to 'out_file'. Requires that
 'in_file' be opened for reading in binary mode, and 'out_file' be opened for
 reading and writing in binary mode. Both 'in_file' and 'out_file' must support
