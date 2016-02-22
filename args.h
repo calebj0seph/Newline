@@ -50,7 +50,11 @@ struct Arguments {
     const arg_char** filenames;    // Array of filenames
 };
 
+/* Parses the command line arguments given to the program, retuning an
+Arguments struct describing the options and arguments given. */
 struct Arguments parse_args(int argc, arg_char** argv);
+
+/* Releases memory allocated by parse_args. */
 void free_args(struct Arguments* args);
 
 #endif // NEWLINE_ARGS_H

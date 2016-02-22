@@ -83,7 +83,6 @@ set newline=.\newline.exe -vt CRLF
 
 for /r "%directory%" %%f in (%files%) do (
     %newline% "%%f"
-
 )
 ```
 ## Installation
