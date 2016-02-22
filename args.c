@@ -297,7 +297,7 @@ struct Arguments parse_args(int argc, arg_char** argv) {
             arg_s("output version information and exit")
         );
     } else if(display_version) {
-        arg_print(arg_s("Newline 0.1.2"));
+        arg_print(arg_s("Newline 0.1.3"));
         arg_print(arg_s("Copyright (c) 2016 Caleb Joseph"));
         arg_print(arg_s(""));
         arg_print(arg_s("Licensed under the terms of the MIT license."));
