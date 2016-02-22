@@ -28,7 +28,7 @@
 static const size_t FileBufferLen = 64*1024;
 
 /* Processes 'in_file', writing the result to 'out_file'. Requires that
-'in_file' be opened for reading in binary mode, and 'out_fide' be opened for
+'in_file' be opened for reading in binary mode, and 'out_file' be opened for
 reading and writing in binary mode. Both 'in_file' and 'out_file' must support
 seeking.
 
