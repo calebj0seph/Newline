@@ -2,10 +2,13 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <windows.h>
 #include <Shlwapi.h>
 #include <io.h>
 #include <fcntl.h>
+#include <share.h>
+#include <sys/stat.h>
 #include "trim.h"
 #include "tempfile.h"
 
@@ -67,7 +70,7 @@ struct TempFile* make_temp_file(const char* format) {
     // Try to find a valid filename and open it, essentially doing what
     // mkstemp() does on OS X/Linux.
     uint32_t random;
-    HANDLE fh = INVALID_HANDLE_VALUE;
+    int fd = -1;
     for(uint32_t attempt = 0; attempt < UINT32_MAX; ++attempt) {
         if(rand_s(&random)) {
             free(temp_file);
@@ -84,29 +87,26 @@ struct TempFile* make_temp_file(const char* format) {
         }
         temp_file[wildcard_i + 5] = alpha_num[((random >> 26) & 0x3f) % 62];
 
-        // Use CREATE_NEW to ensure we're the only ones using the file.
-        fh = CreateFile(
-            temp_file, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW,
-            FILE_ATTRIBUTE_NORMAL, NULL
+        // Use _O_CREAT | _O_EXCL to ensure we're the only ones using the file.
+        errno_t err = _wsopen_s(
+            &fd, temp_file, _O_RDWR | _O_BINARY | _O_NOINHERIT |
+            _O_CREAT | _O_EXCL, _SH_DENYRW, _S_IREAD | _S_IWRITE
         );
-        if(fh == INVALID_HANDLE_VALUE && GetLastError() != ERROR_FILE_EXISTS) {
+        if(err != 0 && err != EEXIST) {
+            // An error occurred that wasn't EEXIST
             free(temp_file);
             return NULL;
-        } else if(fh != INVALID_HANDLE_VALUE) {
+        } else if(err == 0) {
+            // Temporary file created successfully.
             break;
         }
+        // Continue if the file tried already exists.
     }
-    if(fh == INVALID_HANDLE_VALUE) {
+    if(fd == -1) {
         free(temp_file);
         return NULL;
     }
 
-    int fd = _open_osfhandle((intptr_t)fh, _O_BINARY | _O_RDWR);
-    if(fd == -1) {
-        free(temp_file);
-        CloseHandle(fh);
-        return NULL;
-    }
     FILE* file = _fdopen(fd, "w+b");
     if(file == NULL) {
         free(temp_file);
